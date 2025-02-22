@@ -5,7 +5,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests{
-    use std::time::Duration;
+    use std::{num::NonZero, time::Duration};
 
     use redis::{aio::MultiplexedConnection, AsyncCommands, Client, Commands, RedisError};
 
@@ -55,6 +55,36 @@ mod tests{
 
         let value: Result<String, RedisError> = con.get("name").await;
         assert_eq!(true, value.is_err());
+
+        Ok(())
+    }
+
+
+    // List
+    #[tokio::test]
+    async fn test_list() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        let _: () = con.del("names").await?;
+        let _: () = con.rpush("names", "Carongkong").await?;
+        let _: () = con.rpush("names", "Wicok").await?;
+        let _: () = con.rpush("names", "Wacok").await?;
+        let _: () = con.rpush("names", "Waracik").await?;
+
+        let len: i32 = con.llen("names").await?;
+        assert_eq!(4, len);
+
+        let names: Vec<String> = con.lrange("names", 0, -1).await?;
+        assert_eq!(vec!["Carongkong", "Wicok", "Wacok", "Waracik"], names);
+
+        let names: Vec<String> = con.lpop("names", NonZero::new(1)).await?;
+        assert_eq!(vec!["Carongkong"], names);
+        let names: Vec<String> = con.lpop("names", NonZero::new(1)).await?;
+        assert_eq!(vec!["Wicok"], names);
+        let names: Vec<String> = con.lpop("names", NonZero::new(1)).await?;
+        assert_eq!(vec!["Wacok"], names);
+        let names: Vec<String> = con.lpop("names", NonZero::new(1)).await?;
+        assert_eq!(vec!["Waracik"], names);
 
         Ok(())
     }
