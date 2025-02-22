@@ -88,4 +88,29 @@ mod tests{
 
         Ok(())
     }
+
+
+    // Set
+    #[tokio::test]
+    async fn test_set() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        let _: () = con.del("names").await?;
+        let _: () = con.sadd("names", "Carongkong").await?;
+        let _: () = con.sadd("names", "Carongkong").await?;
+        let _: () = con.sadd("names", "Wicok").await?;
+        let _: () = con.sadd("names", "Wicok").await?;
+        let _: () = con.sadd("names", "Wacok").await?;
+        let _: () = con.sadd("names", "Wacok").await?;
+        let _: () = con.sadd("names", "Waracik").await?;
+        let _: () = con.sadd("names", "Waracik").await?;
+
+        let len: i32 = con.scard("names").await?;
+        assert_eq!(4, len);
+
+        let names: Vec<String> = con.smembers("names").await?;
+        assert_eq!(vec!["Carongkong", "Wicok", "Wacok", "Waracik"], names);
+
+        Ok(())
+    }
 }
