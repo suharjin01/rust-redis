@@ -5,6 +5,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests{
+    use std::time::Duration;
+
     use redis::{aio::MultiplexedConnection, AsyncCommands, Client, Commands, RedisError};
 
 
@@ -35,6 +37,24 @@ mod tests{
         let value: String = con.get("name").await?;
 
         println!("{}", value);
+
+        Ok(())
+    }
+
+
+    // String
+    #[tokio::test]
+    async fn test_string() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+        let _: () = con.set_ex("name", "Aqil", 2).await?;
+        let value: String = con.get("name").await?;
+        
+        println!("{}", value);
+
+        tokio::time::sleep(Duration::from_secs(5)).await;
+
+        let value: Result<String, RedisError> = con.get("name").await;
+        assert_eq!(true, value.is_err());
 
         Ok(())
     }
