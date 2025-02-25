@@ -5,7 +5,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests{
-    use std::{num::NonZero, time::Duration};
+    use std::{collections::HashMap, num::NonZero, time::Duration};
 
     use redis::{aio::MultiplexedConnection, AsyncCommands, Client, Commands, RedisError};
 
@@ -131,7 +131,26 @@ mod tests{
 
         let names: Vec<String> = con.zrange("names", 0, -1).await?;
         assert_eq!(vec!["Wacok", "Wicok", "Waracik", "Carongkong"], names);
-        
+
+        Ok(())
+    }
+
+
+    // Hash
+    #[tokio::test]
+    async fn test_hash() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        let _: () = con.del("user:1").await?;
+        let _: () = con.hset("user:1", "id", "1").await?;
+        let _: () = con.hset("user:1", "name", "Suharjin").await?;
+        let _: () = con.hset("user:1", "email", "suharjin01@gmail.com").await?;
+
+        let user: HashMap<String, String> = con.hgetall("user:1").await?;
+        assert_eq!("1", user.get("id").unwrap());
+        assert_eq!("Suharjin", user.get("name").unwrap());
+        assert_eq!("suharjin01@gmail.com", user.get("email").unwrap());
+
         Ok(())
     }
 }
