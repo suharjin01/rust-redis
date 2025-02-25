@@ -113,4 +113,25 @@ mod tests{
 
         Ok(())
     }
+
+
+    // Sorted Set
+    #[tokio::test]
+    async fn test_sorted_set() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        let _: () = con.del("names").await?;
+        let _: () = con.zadd("names", "Carongkong", 100).await?;
+        let _: () = con.zadd("names", "Wicok", 10).await?;
+        let _: () = con.zadd("names", "Wacok", 1).await?;
+        let _: () = con.zadd("names", "Waracik", 50).await?;
+
+        let len: i32= con.zcard("names").await?;
+        assert_eq!(4, len);
+
+        let names: Vec<String> = con.zrange("names", 0, -1).await?;
+        assert_eq!(vec!["Wacok", "Wicok", "Waracik", "Carongkong"], names);
+        
+        Ok(())
+    }
 }
