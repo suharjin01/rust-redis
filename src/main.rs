@@ -7,7 +7,7 @@ fn main() {
 mod tests{
     use std::{collections::HashMap, num::NonZero, time::Duration};
 
-    use redis::{aio::MultiplexedConnection, geo::{RadiusOptions, Unit}, AsyncCommands, Client, Commands, RedisError};
+    use redis::{aio::MultiplexedConnection, geo::{RadiusOptions, Unit}, streams::{StreamReadOptions, StreamReadReply}, AsyncCommands, Client, Commands, RedisError, Value};
 
 
     // Dengan menggunakan singkronus
@@ -232,6 +232,66 @@ mod tests{
 
         let email: String = con.get("email").await?;
         assert_eq!("crck03@gmail.com", email);
+
+        Ok(())
+    }
+
+
+    // Stream
+    #[tokio::test]
+    async fn test_publish_stream() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        for i in 0..10 {
+            let mut map: HashMap<&str, String> = HashMap::new();
+            map.insert("name", format!("Suharjin {}", i));
+            map.insert("address", "Indonesia".to_string());
+
+            let _: () = con.xadd_map("members", "*", &map).await?;
+        }
+
+        Ok(())
+    }
+
+    // create Consumer
+    #[tokio::test]
+    async fn test_create_consumer() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        let _: () = con.xgroup_create("members", "group_1", "0").await?;
+        let _: () = con.xgroup_createconsumer("members", "group_1", "consumer-1").await?;
+        let _: () = con.xgroup_createconsumer("members", "group_1", "consumer-2").await?;
+
+        Ok(())
+    }
+
+    // read consumer
+    #[tokio::test]
+    async fn test_read_consumer() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        let setting = StreamReadOptions::default().group("group_1", "consumer-1")
+            .count(5).block(3000);
+
+        let result: StreamReadReply = con.xread_options(&["members"], &[">"], &setting).await?;
+
+        for key in result.keys  {
+            for item in key.ids  {
+                let map = item.map;
+                let name: String = match map.get("name").unwrap() {
+                    Value::BulkString(value) => String::from_utf8(value.to_vec())?,
+                    _ => "".to_string()
+                };
+
+                let address: String = match map.get("address").unwrap() {
+                    Value::BulkString(value) => String::from_utf8(value.to_vec())?,
+                    _ => "".to_string()
+                };
+
+                println!("{}", name);
+                println!("{}", address);
+            }
+        }
 
         Ok(())
     }
