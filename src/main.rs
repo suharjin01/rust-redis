@@ -189,4 +189,25 @@ mod tests{
 
         Ok(())
     }
+
+
+    // Pipeline
+    #[tokio::test]
+    async fn test_pipeline() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        redis::pipe()
+            .set_ex("name", "Curukcuk", 2)
+            .set_ex("addres", "Konoha", 2)
+            .exec_async(&mut con).await?;
+
+        let name: String = con.get("name").await?;
+        assert_eq!("Curukcuk", name);
+
+        let addres: String = con.get("addres").await?;
+        assert_eq!("Konoha", addres);
+
+
+        Ok(())
+    }
 }
