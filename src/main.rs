@@ -210,4 +210,29 @@ mod tests{
 
         Ok(())
     }
+
+
+    // Transaction
+    #[tokio::test]
+    async fn test_transaction() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        redis::pipe()
+            .atomic()
+            .set_ex("name", "Carakcak", 2)
+            .set_ex("addres", "Wakanda", 2)
+            .set_ex("email", "crck03@gmail.com", 2)
+            .exec_async(&mut con).await?;
+
+        let name: String = con.get("name").await?;
+        assert_eq!("Carakcak", name);
+
+        let addres: String = con.get("addres").await?;
+        assert_eq!("Wakanda", addres);
+
+        let email: String = con.get("email").await?;
+        assert_eq!("crck03@gmail.com", email);
+
+        Ok(())
+    }
 }
