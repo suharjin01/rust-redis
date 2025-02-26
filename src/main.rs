@@ -7,7 +7,8 @@ fn main() {
 mod tests{
     use std::{collections::HashMap, num::NonZero, time::Duration};
 
-    use redis::{aio::MultiplexedConnection, geo::{RadiusOptions, Unit}, streams::{StreamReadOptions, StreamReadReply}, AsyncCommands, Client, Commands, RedisError, Value};
+    use futures::StreamExt;
+    use redis::{aio::{MultiplexedConnection, PubSub}, geo::{RadiusOptions, Unit}, streams::{StreamReadOptions, StreamReadReply}, AsyncCommands, Client, Commands, RedisError, Value};
 
 
     // Dengan menggunakan singkronus
@@ -293,6 +294,37 @@ mod tests{
             }
         }
 
+        Ok(())
+    }
+
+
+
+    // PubSub
+    
+    // membuat fungsi
+    async fn get_pubsub() -> Result<PubSub, RedisError> {
+        let client = Client::open("redis://localhost:6379/")?;
+        client.get_async_pubsub().await
+    }
+
+    #[tokio::test]
+    async fn test_pubsub_subscribe() -> Result<(), RedisError> {
+        let mut pubsub = get_pubsub().await?;
+
+        let _: () = pubsub.subscribe("members").await?;
+        let mut pubsub_stream = pubsub.on_message();
+
+        let message: String = pubsub_stream.next().await.unwrap().get_payload()?;
+
+        println!("{}", message);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_pubsub_publish() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+        con.publish("members", "Suharjin S.T").await?;
         Ok(())
     }
 }
