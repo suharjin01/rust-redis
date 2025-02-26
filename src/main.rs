@@ -7,7 +7,7 @@ fn main() {
 mod tests{
     use std::{collections::HashMap, num::NonZero, time::Duration};
 
-    use redis::{aio::MultiplexedConnection, AsyncCommands, Client, Commands, RedisError};
+    use redis::{aio::MultiplexedConnection, geo::{RadiusOptions, Unit}, AsyncCommands, Client, Commands, RedisError};
 
 
     // Dengan menggunakan singkronus
@@ -150,6 +150,25 @@ mod tests{
         assert_eq!("1", user.get("id").unwrap());
         assert_eq!("Suharjin", user.get("name").unwrap());
         assert_eq!("suharjin01@gmail.com", user.get("email").unwrap());
+
+        Ok(())
+    }
+
+
+    // Geo Point
+    #[tokio::test]
+    async fn test_geo_point() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+
+        let _: () = con.del("sellers").await?;
+        let _: () = con.geo_add("sellers", (106.822702, -6.177590, "Toko A")).await?;
+        let _: () = con.geo_add("sellers", (106.820889, -6.174964, "Toko B")).await?;
+
+        let distance: f64 = con.geo_dist("sellers", "Toko A", "Toko B", Unit::Kilometers).await?;
+        assert_eq!(0.3543, distance);
+
+        let result: Vec<String> = con.geo_radius("sellers", 106.821825, -6.175105, 0.5, Unit::Kilometers, RadiusOptions::default()).await?;
+        assert_eq!(vec!["Toko B", "Toko A"], result);
 
         Ok(())
     }
