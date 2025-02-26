@@ -172,4 +172,21 @@ mod tests{
 
         Ok(())
     }
+
+
+    // Hyper Log Log
+    #[tokio::test]
+    async fn test_hyper_log_log() -> Result<(), RedisError> {
+        let mut con = get_client().await?;
+        
+        let _: () = con.del("visitors").await?;
+        let _: () = con.pfadd("visitors", ("Carongkong", "Wicok", "Waracik")).await?;
+        let _: () = con.pfadd("visitors", ("Carongkong", "Wacok", "Caracac")).await?;
+        let _: () = con.pfadd("visitors", ("Wacok", "Caracac", "El-Klemer")).await?;
+
+        let total: i32 = con.pfcount("visitors").await?;
+        assert_eq!(6, total);
+
+        Ok(())
+    }
 }
